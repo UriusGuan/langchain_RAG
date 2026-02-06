@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 智能 RAG 问答系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .content {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .right-panel {
+            flex: 1;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 150px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4a6ee0;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            color: #666;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4a6ee0 0%, #6a3ca3 100%);
+            color: white;
+            border: none;
+            padding: 16px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 110, 224, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .history-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .history-controls button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(74, 110, 224, 0.2);
+            border-top: 4px solid #4a6ee0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        .result-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .result-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border-left: 5px solid #4a6ee0;
+        }
+        
+        .result-section h3 {
+            color: #4a6ee0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-section h3 i {
+            font-size: 1.2rem;
+        }
+        
+        .answer-content {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .context-item {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 15px;
+        }
+        
+        .context-content {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .context-meta {
+            font-size: 0.9rem;
+            color: #666;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-robot"></i>
+                智能 RAG 问答系统
+            </h1>
+            <p>基于 LangChain 的检索增强生成系统，从知识库中检索相关信息并生成准确回答</p>
+        </div>
+        
+        <div class="content">
+            <div class="left-panel">
+                <h2><i class="fas fa-question-circle"></i> 提问</h2>
+                <form id="queryForm">
+                    <div class="form-group">
+                        <label for="question">请输入您的问题：</label>
+                        <textarea id="question" name="question" 
+                                  placeholder="例如：什么是轻量级架构？轻量级架构有什么优势？" 
+                                  required></textarea>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="includeContext" name="includeContext">
+                        <label for="includeContext">显示检索到的上下文信息</label>
+                    </div>
+                    
+                    <button type="submit" id="submitBtn">
+                        <i class="fas fa-search"></i>
+                        提问
+                    </button>
+                </form>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在检索并生成回答...</p>
+                </div>
+                
+                <div class="history-controls">
+                    <button id="viewHistoryBtn" type="button">
+                        <i class="fas fa-history"></i>
+                        查看历史
+                    </button>
+                    <button id="clearHistoryBtn" type="button">
+                        <i class="fas fa-trash-alt"></i>
+                        清空历史
+                    </button>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <h2><i class="fas fa-comments"></i> 回答</h2>
+                <div class="result-container" id="resultContainer">
+                    <div class="empty-state" id="emptyState">
+                        <i class="fas fa-comment-slash"></i>
+                        <p>暂无问答记录</p>
+                        <p>请在左侧输入问题开始对话</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('queryForm');
+            const questionInput = document.getElementById('question');
+            const includeContextCheckbox = document.getElementById('includeContext');
+            const submitBtn = document.getElementById('submitBtn');
+            const loadingDiv = document.getElementById('loading');
+            const resultContainer = document.getElementById('resultContainer');
+            const emptyState = document.getElementById('emptyState');
+            const viewHistoryBtn = document.getElementById('viewHistoryBtn');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+            
+            // 表单提交处理
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const question = questionInput.value.trim();
+                const includeContext = includeContextCheckbox.checked;
+                
+                if (!question) {
+                    alert('请输入问题');
+                    return;
+                }
+                
+                // 显示加载动画，禁用按钮
+                loadingDiv.classList.add('active');
+                submitBtn.disabled = true;
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('question', question);
+                    formData.append('include_context', includeContext);
+                    
+                    const response = await fetch('/api/query', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // 隐藏加载动画
+                    loadingDiv.classList.remove('active');
+                    submitBtn.disabled = false;
+                    
+                    if (result.status === 'success') {
+                        // 隐藏空状态
+                        emptyState.style.display = 'none';
+                        
+                        // 创建结果元素
+                        const resultSection = document.createElement('div');
+                        resultSection.className = 'result-section';
+                        
+                        if (includeContext) {
+                            // 包含上下文的结果
+                            resultSection.innerHTML = `
+                                <h3><i class="fas fa-info-circle"></i> 问题</h3>
+                                <div class="answer-content">${result.data.question}</div>
+                                
+                                <h3><i class="fas fa-lightbulb"></i> 回答</h3>
+                                <div class="answer-content">${result.data.answer}</div>
+                                
+                                <h3><i class="fas fa-file-alt"></i> 检索上下文 (${result.data.context_count}条)</h3>
+                                ${result.data.contexts.map((context, index) => `
+                                    <div class="context-item">
+                                        <div class="context-content">${context.content}</div>
+                                        <div class="context-meta">
+                                            来源: ${JSON.stringify(context.metadata)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            `;
+                        } else {
+                            // 仅包含回答的结果
+                            resultSection.innerHTML = `
+                                <h3><i class="fas fa-info-circle"></i> 问题</h3>
+                                <div class="answer-content">${result.data.question}</div>
+                                
+                                <h3><i class="fas fa-lightbulb"></i> 回答</h3>
+                                <div class="answer-content">${result.data.answer}</div>
+                            `;
+                        }
+                        
+                        // 添加到结果容器顶部
+                        resultContainer.prepend(resultSection);
+                        
+                        // 清空输入框
+                        questionInput.value = '';
+                        
+                    } else {
+                        alert(`查询失败: ${result.message}`);
+                    }
+                    
+                } catch (error) {
+                    loadingDiv.classList.remove('active');
+                    submitBtn.disabled = false;
+                    alert('网络错误，请检查连接后重试');
+                    console.error('请求失败:', error);
+                }
+            });
+            
+            // 查看历史按钮
+            viewHistoryBtn.addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/api/history');
+                    const result = await response.json();
+                    
+                    if (result.status === 'success') {
+                        if (result.data.count === 0) {
+                            alert('暂无对话历史');
+                            return;
+                        }
+                        
+                        // 隐藏空状态
+                        emptyState.style.display = 'none';
+                        
+                        // 清空结果容器
+                        resultContainer.innerHTML = '';
+                        
+                        // 显示所有历史记录
+                        const history = result.data.history;
+                        for (let i = history.length - 1; i >= 0; i -= 2) {
+                            if (i - 1 >= 0) {
+                                const userMsg = history[i - 1];
+                                const assistantMsg = history[i];
+                                
+                                const resultSection = document.createElement('div');
+                                resultSection.className = 'result-section';
+                                resultSection.innerHTML = `
+                                    <h3><i class="fas fa-info-circle"></i> 问题</h3>
+                                    <div class="answer-content">${userMsg.content}</div>
+                                    
+                                    <h3><i class="fas fa-lightbulb"></i> 回答</h3>
+                                    <div class="answer-content">${assistantMsg.content}</div>
+                                `;
+                                
+                                resultContainer.appendChild(resultSection);
+                            }
+                        }
+                        
+                    } else {
+                        alert(`获取历史失败: ${result.message}`);
+                    }
+                    
+                } catch (error) {
+                    alert('获取历史记录失败');
+                    console.error('获取历史失败:', error);
+                }
+            });
+            
+            // 清空历史按钮
+            clearHistoryBtn.addEventListener('click', async function() {
+                if (confirm('确定要清空所有对话历史吗？')) {
+                    try {
+                        const response = await fetch('/api/history', {
+                            method: 'DELETE'
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.status === 'success') {
+                            alert('对话历史已清空');
+                            resultContainer.innerHTML = '';
+                            emptyState.style.display = 'block';
+                        } else {
+                            alert(`清空历史失败: ${result.message}`);
+                        }
+                        
+                    } catch (error) {
+                        alert('清空历史记录失败');
+                        console.error('清空历史失败:', error);
+                    }
+                }
+            });
+            
+            // 示例：输入框获取焦点时显示示例
+            questionInput.addEventListener('focus', function() {
+                if (!this.value) {
+                    this.placeholder = '例如：什么是轻量级架构？轻量级架构有什么优势？如何实现轻量级架构？';
+                }
+            });
+            
+            // 示例：页面加载时显示欢迎信息
+            const welcomeSection = document.createElement('div');
+            welcomeSection.className = 'result-section';
+            welcomeSection.innerHTML = `
+                <h3><i class="fas fa-door-open"></i> 欢迎使用 RAG 问答系统</h3>
+                <div class="answer-content">
+                    <p>这是一个基于知识库的智能问答系统，系统会从文档中检索相关信息并生成回答。</p>
+                    <p><strong>使用方法：</strong></p>
+                    <ul>
+                        <li>在左侧输入您的问题</li>
+                        <li>可选：勾选"显示检索到的上下文信息"查看检索过程</li>
+                        <li>点击"提问"按钮获取回答</li>
+                        <li>使用"查看历史"和"清空历史"管理对话记录</li>
+                    </ul>
+                </div>
+            `;
+            resultContainer.prepend(welcomeSection);
+            emptyState.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

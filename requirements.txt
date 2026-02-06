@@ -1,0 +1,14 @@
+python-dotenv
+python-multipart
+langchain-openai
+langchain-core
+langchain-community
+langchain_chroma
+langchain_huggingface
+langchain_text_splitters
+sentence-transformers
+modelscope
+fastapi
+uvicorn
+jinja2
+chromadb
