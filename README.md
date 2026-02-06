@@ -4,8 +4,7 @@
 
 这个项目所需要的依赖库名称都保存在项目根目录下的requirements文件里，其中的modelscope模组仅用于下载嵌入模型，如果你已经下载过嵌入模型并且不希望安装新的嵌入模型，可将requirements文件里的'modelscope'删去。
 
-进入终端用一句命令将它们部署到位：
-pip install -r requirements.txt
+进入终端用一句命令将它们部署到位：pip install -r requirements.txt
 
 接下来要做的是下载bge-large-zh-v1.5嵌入模型，如果你之前已经部署了嵌入模型，可以跳过下面的内容。
 
